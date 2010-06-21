@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:codo_tasks="codo.view.tasks.*" 
+	width="100%"
+	implements="mx.controls.listClasses.IDropInListItemRenderer"
+	verticalScrollPolicy="off"
+	horizontalScrollPolicy="off"
+	click="onClick(event)"
+	doubleClickEnabled="true"
+	doubleClick="startEdit()"
+	mouseOver="onMouseOver(event)"
+	mouseOut="onMouseOut(event)"
+	creationComplete="init()"
+	keyDown="onKeyDown(event)">
+	
+	<mx:Script>
+	<![CDATA[
+		import codo.model.Folder;
+		import mx.events.ResizeEvent;
+		import mx.managers.FocusManager;
+		import mx.managers.IFocusManager;
+		import mx.collections.IList;
+		import mx.events.ScrollEvent;
+		import mx.events.FlexEvent;
+		import mx.events.ListEvent;
+		import codo.model.TaskService;
+		import mx.controls.Alert;
+		import mx.controls.listClasses.BaseListData;
+		import codo.model.Task;
+
+
+		
+    	protected var _listData:BaseListData;
+    	    	    
+	    protected var isEditing:Boolean = false;
+
+	    [Bindable]
+	    protected var viewStyle: String;
+
+	    [Bindable]
+	    protected var borderViewStyle: String;
+	     
+		private function init(): void 
+		{
+			owner.addEventListener(ListEvent.CHANGE, function(event:ListEvent):void{updateState();});
+		}
+
+
+	    
+	    public function get listData() : BaseListData
+	    {
+		    return _listData;
+	    }
+	    
+	    public function set listData( value:BaseListData ) : void
+	    {
+		    _listData = value;
+	    }		
+        
+                        
+        override public function set data(value:Object):void {
+            super.data = value;
+            if(data != null) {
+				if (taskText) {
+					taskText.resize()
+				}
+                
+                if (data.id == TaskList(listData.owner).editId && !isEditing) {
+                	startEdit();
+                	
+                } else {
+	                updateState();                            
+                }
+                
+                if (editCompleted) {
+	                if (data.status == Task.STATUS_COMPLETED) {
+	                	editCompleted.toolTip = "Mark item as not yet done.\nKeyboard shortcut: Space";
+	                }  else {
+	                	editCompleted.toolTip = "Mark item as done.\nKeyboard shortcut: Space";                	
+	                }             
+	               }
+            }
+        }        
+
+        
+        
+        protected function startEdit(): void {
+        	if (!isEditing)
+        	{
+	        	isEditing = true;
+	        	
+	        	data.viewText = data.editText;
+	        	
+				taskText.setFocus();
+				taskText.editable = true;
+				taskText.selectable = true;
+				
+				var i:int = data.editText.indexOf('New Task');
+	        	if (i == 0) {
+					taskText.selectionBeginIndex = 0;
+					taskText.selectionEndIndex = 8;
+					
+	        	} else { 
+					var noTags: String = data.editText.replace(TaskService.TAG_PATTERN, function(t:String, p2:Object, p3:Object):String {
+						var r: String = "";
+						for (var i:int = 0; i < t.length; i++) 
+						{
+							r += " ";
+						}
+						return r;
+					});	
+
+					for (var b: int = 0; b < noTags.length - 1; b++) {						
+						if (noTags.charAt(b) != ' ') {
+							break;
+						}
+					}
+
+					for (var e: int = noTags.length - 1; e > 0; e--) {
+						if (noTags.charAt(e) != ' ') {
+							break;
+						}
+					}
+					
+					if (b > e) {
+						b = 0;
+						e = -1;
+					}
+
+					taskText.selectionBeginIndex = b;
+					taskText.selectionEndIndex = e + 1;                		
+	        	}
+				        	
+	        	updateState();
+	        }
+        }
+        
+        
+        
+        protected function endEdit():void {
+        	if (isEditing) {
+	        	isEditing = false;
+	        	taskText.onFocusOut();
+	        	taskText.editable = false;
+	        	taskText.selectionBeginIndex = 0;
+	        	taskText.selectionEndIndex = 0;
+	        	taskText.selectable = false;
+	        	
+	        	data.editText = taskText.text;
+				TaskService.instance.updateTask(Task(data));
+				
+				TaskList(owner).dispatchEvent(new Event(TaskList.UPDATE));
+
+		        TaskList(owner).editId = -1;		        
+	        	updateState();
+        	}
+        }
+        
+        
+        
+		protected function completeTaskItem(event:Event):void
+		{
+			if (event.currentTarget.selected) {
+				TaskService.instance.updateTaskStatuses([data], Task.STATUS_COMPLETED);
+			} else {
+				TaskService.instance.updateTaskStatuses([data], Task.STATUS_PENDING);
+			}
+			TaskList(owner).refreshData(true);
+			TaskList(owner).setFocus();
+		}			        
+
+
+
+		public function updateState(): void {
+
+			if (data && data.folderId) {
+				var folderColor: int = TaskService.instance.getFolder(data.folderId).color;
+				
+				if (isEditing) {
+					viewStyle = "Task" + folderColor;
+					borderViewStyle = "TaskBorderEdit";
+					
+				} else {
+					if (data.isCompleted && data.folderId != Folder.FOLDER_ID_DONE) {
+						viewStyle = "Task1";
+						
+					} else {	
+		        		viewStyle = "Task" + folderColor;
+
+		   			}
+
+					if(TaskList(owner).selectedItems.indexOf(data) >= 0 && styleName != 'TaskDragProxyEntry') {
+						if (data.isCompleted || data.folderId == Folder.FOLDER_ID_DONE || data.folderId == Folder.FOLDER_ID_TRASH) {
+							borderViewStyle = "TaskBorderDarkSelected";
+						} else {
+							borderViewStyle = "TaskBorderSelected";
+						}	
+		        	} else {
+						borderViewStyle = "TaskBorder";				        		
+			        }
+				
+				}
+				
+				if (styleName == 'TaskDragProxyEntryLast') {
+					borderViewStyle += "Last";
+					
+				} else if (styleName != 'TaskDragProxyEntry') {
+					var dp: IList = IList(TaskList(owner).dataProvider);
+					if (dp.getItemIndex(data) == dp.length - 1) {
+						borderViewStyle += "Last";
+					} 
+				}				
+			}
+		}			
+
+
+		
+		protected function onKeyDown(event:KeyboardEvent):void {
+			if (isEditing && !event.altKey && !event.commandKey && !event.ctrlKey && !event.altKey) {
+				event.stopPropagation();
+				if ((event.keyCode == Keyboard.ENTER) || event.keyCode == Keyboard.ESCAPE) {
+					event.preventDefault();
+					//endEdit();
+					TaskList(owner).setFocus();
+					TaskList(owner).afterEndEdit(Task(data));
+				} 
+			}	
+		}    		 		
+		
+		
+		
+	 	public function resizeName(): void {
+	 		if (taskText) {
+	 			if (isEditing) {
+		 			data.viewText = taskText.text;
+		 		}
+		 		taskText.resize();
+			}
+		}
+
+				
+						
+		protected function onMouseOver(event: MouseEvent):void 
+		{
+			editCompleted.visible = true;	
+		} 
+
+
+
+		protected function onMouseOut(event: MouseEvent):void 
+		{
+			if (!editCompleted.selected) 
+			{
+				editCompleted.visible = false;
+			}	
+		}
+	
+	
+		protected function onClick(event: MouseEvent): void
+		{
+			if (taskText.editable) {
+				event.stopPropagation();
+				trace('taskEditor onClick stop');
+			} else {
+				TaskList(owner).selectTaskEvent = event;
+			}
+		}
+	]]>
+	</mx:Script>
+	
+	<mx:HBox width="100%" id="taskBox" styleName="{viewStyle}">
+		<mx:HBox width="100%" id="taskBorder" styleName="{borderViewStyle}">
+			<mx:CheckBox id="editCompleted" styleName="TaskCheck" selected="{data.isCompleted}" visible="{data.isCompleted}" click="completeTaskItem(event)"/>
+			
+			<codo_tasks:TaskText 
+				id="taskText"
+				editable="false" 
+				selectable="false"
+				change="resizeName()"
+				width="100%"
+				focusOut="endEdit()"
+				strikeThrough="{data.isDeleted}"
+				htmlText="{data.viewText}"
+				keyDown="onKeyDown(event)"
+				taskList="{TaskList(owner)}"/>
+		</mx:HBox>
+	</mx:HBox>
+</mx:VBox>

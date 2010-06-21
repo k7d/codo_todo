@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:List xmlns:mx="http://www.adobe.com/2006/mxml"
+	styleName="TaskList" 
+	itemRenderer="codo.view.tasks.TaskEditor"
+	variableRowHeight="true"
+	creationComplete="init()"
+	allowMultipleSelection="true"
+	keyDown="onKeyDown(event)"
+	dragEnabled="true"
+	dragMoveEnabled="true"
+	dropEnabled="true"
+	dragDrop="reorder(event);"
+	resize="onResize()"
+	verticalScrollPolicy="on"
+	horizontalScrollPolicy="off"
+	copy="onCopy()"
+	cut="onCut()"
+	paste="onPaste()"
+	selectAll="selectAll()"	
+	minHeight="100"
+	click="onClick(event)">
+	
+	<mx:Script>
+		<![CDATA[
+			import codo.model.Folder;
+			import codo.model.Tag;
+			import mx.collections.ArrayCollection;
+			import mx.events.PropertyChangeEvent;
+			import mx.controls.listClasses.ListItemDragProxy;
+			import mx.core.IUIComponent;
+			import codo.model.TaskService;
+			import mx.events.DragEvent;
+			import mx.core.EventPriority;
+			import mx.controls.listClasses.IListItemRenderer;
+			import codo.model.Task;
+			import mx.events.ListEvent;
+			
+			import mx.core.mx_internal;
+			
+			public var editId: int = -1;
+			
+			public static var UPDATE:String = "UPDATE";
+			
+			public var filterByFolder:Folder = null;
+			public var filterByTag:Tag = null;
+			
+			protected var lastArchived:Number = 0;
+			
+			public var topGap: Boolean = true;
+
+			public var selectTaskEvent: Event = null;
+
+
+			private function init():void {
+			}	
+
+
+                  
+			override protected function mouseDownHandler(event:MouseEvent):void {
+				super.mouseDownHandler(event);
+				mx_internal::bSelectOnRelease = false; // ovverride selection handling				
+			}
+
+
+
+            public function editItem(id: int): void {
+            	editId = id;
+            }
+            
+           
+           
+            public function afterEndEdit(task: Task): void {
+				selectedItem = task;          	
+            	showCaret = true;
+            	dispatchEvent(new ListEvent(ListEvent.CHANGE));
+            }
+           
+           
+            
+			override protected function drawHighlightIndicator(indicator:Sprite, x:Number, y:Number, width:Number, height:Number, color:uint, itemRenderer:IListItemRenderer):void
+    		{
+		        return;
+    		}
+    		
+    		
+
+			override protected function drawSelectionIndicator(indicator:Sprite, x:Number, y:Number, width:Number, height:Number, color:uint, itemRenderer:IListItemRenderer):void
+    		{
+      			return;
+    		}
+    		
+    		
+    		
+    		override protected function drawCaretIndicator(indicator:Sprite, x:Number, y:Number, width:Number, height:Number, color:uint, itemRenderer:IListItemRenderer):void
+    		{    	
+				return;
+    		} 
+    		
+    		
+    		
+			protected function onKeyDown(event:KeyboardEvent):void {
+				if (event.keyCode == Keyboard.ENTER && !event.ctrlKey && !event.commandKey && selectedItem) {
+					editId = Task(selectedItem).id;
+					invalidateList();
+										
+				} else if ((event.keyCode == Keyboard.BACKSPACE || event.keyCode == Keyboard.DELETE) && selectedItems.length > 0) {
+					deleteTasks();
+					
+				} else if (event.keyCode == Keyboard.SPACE && selectedItems.length > 0) {
+					completeTasks();
+				} 	
+			}    
+			
+			
+			
+			protected function selectAll(): void 
+			{
+				var newSelectedIndices: Array = [];
+				for (var i:int = 0; i < dataProvider.length; i++) 
+				{
+					newSelectedIndices.push(i);
+				}
+				selectedIndices = newSelectedIndices;				
+			}
+			
+			
+			protected function reorder(event:DragEvent):void {
+				event.preventDefault();
+				hideDropFeedback(event);
+				
+				var after:Task = null;
+				//var before:Task = null;
+				
+				var i:int = calculateDropIndex(event);
+				
+				if (i > 0) {
+					after = dataProvider[i - 1];					
+				}
+				
+				/*
+				if (i < dataProvider.length) {
+					before = dataProvider[i];
+				}
+				*/
+				
+				TaskService.instance.reorderTasks(selectedItems, after);
+				
+				refreshData(true);
+			}
+			
+				
+			
+			public function refreshData(restoreSelection:Boolean = false, restoreScrollPosition: Boolean = true):void
+			{					
+				var scrollPosition: Number = verticalScrollPosition;		
+				if (restoreSelection) {
+					var itemIds: Array = [];
+					selectedItems.forEach(function(element:*, index:int, arr:Array):void {
+						itemIds.push(element.id);	
+					});
+				}
+				
+				if (filterByFolder) {
+					dataProvider = TaskService.instance.getTasksByFolder(filterByFolder);
+				} else if (filterByTag) {
+					dataProvider = TaskService.instance.getTasksByTag(filterByTag);
+				} else {
+					dataProvider = [];
+				}
+
+				if (restoreSelection) {
+					selectByIds(itemIds);
+				}				
+				
+				if (restoreScrollPosition) {
+					verticalScrollPosition = scrollPosition;
+				}
+			}			
+			
+			
+			protected function selectByIds(itemIds: Array): void 
+			{
+				var newSelectedIndices: Array = [];
+				for (var i:int = 0; i < dataProvider.length; i++) 
+				{
+					if (itemIds.indexOf(dataProvider.getItemAt(i).id) >= 0) {
+						newSelectedIndices.push(i);
+					}
+				}
+				selectedIndices = newSelectedIndices;																
+			}
+			
+			
+		    override protected function get dragImage():IUIComponent
+		    {
+		        var image:TaskDragProxy = new TaskDragProxy();
+		        image.owner = this;
+		        image.moduleFactory = moduleFactory;		        
+		        return image;
+		    }			
+		    
+		    
+		    
+		    public function deleteTasks(permanent:Boolean = false): void 
+		    {		
+		    	var oldIndex: Number = selectedIndex;
+		    	var scrollPosition: Number = verticalScrollPosition;
+		    	if (permanent) {
+		    		TaskService.instance.deleteTasks(selectedItems);
+		    	} else {
+		    		TaskService.instance.updateTaskFolders(selectedItems, TaskService.instance.getFolder(Folder.FOLDER_ID_TRASH));
+		    	}
+		    	selectedItems = [];
+		    	refreshData(false, true);
+		    	setFocus();
+		    	selectNextTask(oldIndex);
+		    	verticalScrollPosition = scrollPosition;
+		    }
+
+
+			
+			public function updateTaskFolder(folder: Folder): void
+			{
+		    	var oldIndex: Number = selectedIndex;
+		    	var scrollPosition: Number = verticalScrollPosition;
+		    	TaskService.instance.updateTaskFolders(selectedItems, folder);
+		    	selectedItems = [];
+		    	refreshData(false, true);
+		    	setFocus();
+		    	selectNextTask(oldIndex);
+		    	verticalScrollPosition = scrollPosition;
+			}
+
+		    
+		    
+		    protected function selectNextTask(index: Number): void
+		    {
+				if (dataProvider.length > 0) {
+					if (index < 0) {
+						index = 0;
+					}
+			    	if (index >= dataProvider.length) {
+			    		selectedItem = dataProvider[dataProvider.length - 1];
+			    	} else {
+			    		selectedItem = dataProvider[index];	
+			    	}
+			    	
+			    	refreshData(true, false);
+			    }
+		    }
+		    
+		    
+		    
+		    protected function completeTasks(): void 
+		    {
+		    	selectedItems.forEach(function(element:*, index:int, arr:Array):void {
+		    		if (element.status == Task.STATUS_COMPLETED) {
+		    			TaskService.instance.updateTaskStatuses([element], Task.STATUS_PENDING);
+		    		} else {
+		    			TaskService.instance.updateTaskStatuses([element], Task.STATUS_COMPLETED);
+		    		}
+				});
+				
+		    	refreshData(true);
+		    	setFocus();		    	
+		    }		 
+		    
+		    
+		    
+		    override protected function findKey(eventCode:int):Boolean
+		    {
+		    	return false;
+		    } 
+		    
+		    
+		    
+			protected override function updateDisplayList( unscaledWidth:Number, unscaledHeight:Number ):void
+			{
+				super.updateDisplayList( unscaledWidth, unscaledHeight );
+			
+				if( verticalScrollBar && verticalScrollBar.visible )
+				{
+					verticalScrollBar.height = height - 16;
+				}
+			}		    
+
+
+		
+			protected function onResize(): void
+			{
+		        itemsNeedMeasurement = true;
+		        invalidateProperties();
+		        invalidateSize();
+		        invalidateDisplayList();				
+			}
+			
+						
+						
+			protected function onCopy(): void
+			{
+				if (selectedItems.length > 0) {
+					Clipboard.generalClipboard.clear();
+					Clipboard.generalClipboard.setData(ClipboardFormats.TEXT_FORMAT, TaskService.instance.tasksToText(selectedItems), false);
+				}
+			}
+
+
+			protected function onCut(): void
+			{
+				onCopy();
+				deleteTasks(true);
+			}
+
+
+			protected function onPaste(): void
+			{
+				if(Clipboard.generalClipboard.hasFormat(ClipboardFormats.TEXT_FORMAT)){
+					var text:String = String(Clipboard.generalClipboard.getData(ClipboardFormats.TEXT_FORMAT));
+					var taskIds: Array = TaskService.instance.textToTasks(text, filterByFolder, filterByTag);
+					refreshData(false, true);
+					selectByIds(taskIds);
+					//dispatchEvent(new ListEvent(ListEvent.CHANGE));
+					dispatchEvent(new Event(UPDATE));
+ 				}
+			}
+			
+			
+			
+			protected function onClick(event: MouseEvent): void
+			{
+				if (selectTaskEvent != event) 
+				{
+					// clicked on empty area - unselect
+					selectedItems = [];
+				} 
+				
+				setFocus();	
+			}
+		]]>
+	</mx:Script>
+		 
+</mx:List>

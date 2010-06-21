@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:List
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	itemRenderer="codo.view.tags.ACTagListEntry"
+	styleName="ACTagList"
+	allowMultipleSelection="false"
+	tabEnabled="false"
+	change="onChange()">
+
+	<mx:Script>
+		<![CDATA[
+			import codo.model.Tag;
+			import mx.events.ListEvent;
+			import codo.model.TaskService;
+			import mx.controls.listClasses.IListItemRenderer;
+			
+			public var selectedTag: Tag = null;
+			
+			public static var REFRESH: String = "refresh";
+									
+			override protected function drawHighlightIndicator(indicator:Sprite, x:Number, y:Number, width:Number, height:Number, color:uint, itemRenderer:IListItemRenderer):void
+    		{
+		        return;
+    		}
+    		
+    		
+
+			override protected function drawSelectionIndicator(indicator:Sprite, x:Number, y:Number, width:Number, height:Number, color:uint, itemRenderer:IListItemRenderer):void
+    		{
+      			return;
+    		}
+    		
+    		
+    		
+    		override protected function drawCaretIndicator(indicator:Sprite, x:Number, y:Number, width:Number, height:Number, color:uint, itemRenderer:IListItemRenderer):void
+    		{    	
+				return;
+    		} 
+
+
+	        public function refreshData(tag: String): void 
+	        {
+	        	dataProvider = TaskService.instance.getTagsLike(tag, 50);
+	        	if (dataProvider.length > 0) {
+	        		selectedItem = selectedTag = dataProvider[0];
+	        		
+	        		if (dataProvider.length > 10) {
+	        			height = 10 * 26 + 2;
+	        		} else {
+			        	height = dataProvider.length * 26 + 2;	        			
+	        		}
+
+	        		dispatchEvent(new Event(REFRESH));
+	        	} 
+	        }
+	        
+	        
+	        protected function onChange(): void
+	        {
+	        	selectedTag = Tag(selectedItem);
+	        	dispatchEvent(new Event(REFRESH));
+	        }	        
+		]]>
+	</mx:Script>
+	
+</mx:List>

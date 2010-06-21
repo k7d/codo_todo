@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:List
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	itemRenderer="codo.view.tags.MoreTagsListEntry"
+	styleName="MoreTagsList"
+	allowMultipleSelection="false"
+	tabEnabled="false"
+	creationComplete="refreshData()"
+	addedToStage="onAddedToStage()"
+	change="onChange()">
+
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import codo.model.Task;
+			import mx.managers.DragManager;
+			import mx.events.DragEvent;
+			import codo.model.Tag;
+			import mx.controls.listClasses.IListItemRenderer;
+			import mx.collections.ArrayCollection;
+			import codo.model.TaskService;
+			
+			public static var TAG_UPDATE: String = "updateTag";
+			
+			public static var SELECT: String = "select";
+			public static var REFRESH: String = "refresh";			
+						
+			override public function set selectedItem(data:Object):void
+			{
+				super.selectedItem = data;
+				dispatchEvent(new Event(REFRESH));
+			}
+			
+			protected function onChange(): void 
+			{
+				dispatchEvent(new Event(REFRESH));
+				dispatchEvent(new Event(SELECT));
+			}
+						
+			public function refreshData():void
+			{
+				var scrollPosition: Number = verticalScrollPosition;
+				
+				var oldSelectedItem:Tag = Tag(selectedItem); 
+				
+				dataProvider = TaskService.instance.getAllTags();
+				
+				if (oldSelectedItem) {
+					for (var i:int = 0; i < ArrayCollection(dataProvider).length; i++) {
+						var item: Tag = Tag(ArrayCollection(dataProvider).getItemAt(i));
+						if (item.tag == oldSelectedItem.tag) {
+							selectedItem = item;
+							break;
+						}
+					}
+				} 	
+				
+				verticalScrollPosition = scrollPosition;		
+			}
+			
+			
+			
+			public function onAddedToStage(): void
+			{
+				selectedItem = null;
+				refreshData();
+			}
+			
+			
+						
+			override protected function drawHighlightIndicator(indicator:Sprite, x:Number, y:Number, width:Number, height:Number, color:uint, itemRenderer:IListItemRenderer):void
+    		{
+		        return;
+    		}
+    		
+    		
+
+			override protected function drawSelectionIndicator(indicator:Sprite, x:Number, y:Number, width:Number, height:Number, color:uint, itemRenderer:IListItemRenderer):void
+    		{
+      			return;
+    		}
+    		
+    		
+    		
+    		override protected function drawCaretIndicator(indicator:Sprite, x:Number, y:Number, width:Number, height:Number, color:uint, itemRenderer:IListItemRenderer):void
+    		{    	
+				return;
+    		}   
+		]]>
+	</mx:Script>
+	
+	<mx:Metadata>
+		[Event(name="updateTag", type="flash.events.Event")]
+		[Event(name="select", type="flash.events.Event")]
+		[Event(name="refresh", type="flash.events.Event")]
+	</mx:Metadata>	
+	
+</mx:List>

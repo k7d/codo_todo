@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:codo="codo.view.*" 
+	height="26"
+	verticalScrollPolicy="off"
+	horizontalScrollPolicy="off"
+	styleName="FilterListEntry"
+	paddingLeft="5">
+	
+	<mx:Script>
+	<![CDATA[
+		import mx.events.ResizeEvent;
+		import mx.core.Repeater;
+		import codo.model.Folder;
+		import codo.model.Tag;
+		import mx.managers.DragManager;
+		import codo.model.Task;
+		import mx.events.ListEvent;
+		import codo.model.TaskService;
+		import mx.events.DragEvent;
+		import mx.controls.listClasses.BaseListData;
+
+    	public var tagList:ACTagList;	    	    
+	    public var tag: Tag;
+                        
+        override public function set data(value:Object):void 
+        {
+            super.data = value;
+            
+            tagList = ACTagList(owner);
+            
+            if (tagList) {
+            	tagList.addEventListener(ACTagList.REFRESH, function(event:Event):void  {            
+            		updateSelection();
+            	});
+            	
+            	if (tagLabel) {
+            		tagLabel.validateNow();
+            		if (tagLabel.textWidth + 50 > tagList.width) {
+            			tagList.width = tagLabel.textWidth + 50;
+            		}
+            	}
+            }
+            
+            if (data) {
+				if (data.isFavourite) {
+					tagImage.source = "/codo/assets/tag.png";
+				} else {
+					tagImage.source = "/codo/assets/tag_inactive.png";
+				}
+				updateSelection();
+            }
+        }       
+         			
+        protected function updateSelection():void 
+        {
+    		if (data && tagList.selectedTag && tagList.selectedTag.tag == data.tag) {
+    			styleName = "FilterListEntrySelected";
+    		} else {
+    			styleName = "FilterListEntry";
+    		}
+        };        
+	]]>
+	</mx:Script>
+	
+	<mx:HBox styleName="MoreTagsLabel" height="26" verticalAlign="middle">
+		<mx:Image width="20" id="tagImage"/>
+		<mx:Label truncateToFit="true" id="tagLabel" text="{data.tagLabel}" paddingLeft="-6"/>			
+	</mx:HBox>
+</mx:HBox>
+
+

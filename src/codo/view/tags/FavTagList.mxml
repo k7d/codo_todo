@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:List
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	styleName="FilterList"
+	itemRenderer="codo.view.tags.FavTagListEntry"
+	allowMultipleSelection="false"
+	tabEnabled="false"
+	height="{dataProvider.length * 26}"
+	change="onChange()">
+
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import codo.model.Task;
+			import mx.managers.DragManager;
+			import mx.events.DragEvent;
+			import codo.model.Tag;
+			import mx.controls.listClasses.IListItemRenderer;
+			import mx.collections.ArrayCollection;
+			import codo.model.TaskService;
+			
+			public static var TAG_ADD: String = "ADD_TAG";
+			
+			public static var SELECT: String = "SELECT";
+			public static var REFRESH: String = "REFRESH";
+			public static var EDIT: String = "EDIT";			
+						
+			override public function set selectedItem(data:Object):void
+			{
+				super.selectedItem = data;
+				dispatchEvent(new Event(REFRESH));
+			}
+			
+			protected function onChange(): void 
+			{
+				dispatchEvent(new Event(REFRESH));
+				dispatchEvent(new Event(SELECT));
+			}
+				
+				
+						
+			public function refreshData():void
+			{
+				var oldSelectedItem:Tag = Tag(selectedItem); 
+				
+				dataProvider = TaskService.instance.getTags(true);
+				if (oldSelectedItem) {
+					selectTag(oldSelectedItem);
+				} 			
+			}
+			
+			
+			
+			public function selectTag(tag: Tag):void 
+			{
+				for (var i:int = 0; i < ArrayCollection(dataProvider).length; i++) {
+					var item: Tag = Tag(ArrayCollection(dataProvider).getItemAt(i));
+					if (item.tag == tag.tag) {
+						selectedItem = item;
+						break;
+					}
+				}				
+			}
+			
+			
+			
+			public function edit():void
+			{
+				dispatchEvent(new Event(EDIT));
+			}
+			
+			
+			
+			override protected function drawHighlightIndicator(indicator:Sprite, x:Number, y:Number, width:Number, height:Number, color:uint, itemRenderer:IListItemRenderer):void
+    		{
+		        return;
+    		}
+    		
+    		
+
+			override protected function drawSelectionIndicator(indicator:Sprite, x:Number, y:Number, width:Number, height:Number, color:uint, itemRenderer:IListItemRenderer):void
+    		{
+      			return;
+    		}
+    		
+    		
+    		
+    		override protected function drawCaretIndicator(indicator:Sprite, x:Number, y:Number, width:Number, height:Number, color:uint, itemRenderer:IListItemRenderer):void
+    		{    	
+				return;
+    		} 
+    		    		
+	        override public function drawFocus(isFocused:Boolean):void 
+	        {
+				return;        	
+	        }
+    		
+		    override protected function findKey(eventCode:int):Boolean
+		    {
+		    	return false;
+		    }     		
+  
+		]]>
+	</mx:Script>
+	
+</mx:List>

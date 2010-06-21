@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:codo="codo.view.*"
+	verticalScrollPolicy="off"
+	horizontalScrollPolicy="off"
+	>
+		
+	<mx:Script>
+	<![CDATA[
+		import mx.core.Repeater;
+		import codo.model.Folder;
+		import codo.model.Tag;
+		import mx.managers.DragManager;
+		import codo.model.Task;
+		import mx.events.ListEvent;
+		import codo.model.TaskService;
+		import mx.events.DragEvent;
+		import mx.controls.listClasses.BaseListData;
+		
+	    [Bindable]
+	    public var text:String;
+	    
+	    [Bindable]
+	    public var iconImage:String = null;
+	    
+	    private var _isSelected: Boolean = false;	    
+	   	
+	    
+	    public function set isSelected(value:Boolean): void
+	    {
+	    	_isSelected = value;
+	    	focusOff();
+	    }
+	    
+	    
+	    public function get isSelected(): Boolean
+	    {
+	    	return _isSelected;
+	    }
+	    
+	    
+
+                        
+        protected function onClick(): void
+        {
+        	isSelected = true;
+			dispatchEvent(new FilterEntryEvent(FilterEntryEvent.SELECT));
+        }
+        
+        
+        
+        protected function focusOn():void 
+        {
+        	entry.styleName = "FilterListEntryFocus";
+        };
+        
+        
+         			
+        protected function focusOff():void 
+        {
+    		if (isSelected) {
+    			entry.styleName = "FilterListEntrySelected";
+    			entryLabel.styleName = "FilterEntryLabelSelected";
+
+    		} else {
+    			entry.styleName = "FilterListEntry";
+    			entryLabel.styleName = "FilterEntryLabel";
+    		}
+        };
+        
+        
+        
+		protected function onDragEnter(event: DragEvent):void {
+			if (event.dragSource.hasFormat("items")) {
+				var items:Array = event.dragSource.dataForFormat("items") as Array;
+				if (items.length > 0 && items[0] is Task) {
+					DragManager.acceptDragDrop(entry);
+    				focusOn();
+				}
+			}
+		}		
+
+
+
+		protected function onDragOver(event: DragEvent):void {
+			DragManager.showFeedback(DragManager.LINK);
+		}
+		
+		
+		
+		protected function onDragExit(event: DragEvent):void {
+			focusOff();
+		}
+		
+
+		protected function onDragDrop(event: DragEvent):void {
+			focusOff();
+			if (event.dragSource.hasFormat("items")) {
+				var items:Array = event.dragSource.dataForFormat("items") as Array;
+				if (items.length > 0 && items[0] is Task) {
+					dispatchEvent(new FilterEntryEvent(FilterEntryEvent.DRAG_DROP, items));
+				}
+			}
+			
+		}
+		
+		
+	]]>
+	</mx:Script>
+		
+	<mx:HBox
+		id="entry"
+		width="100%"
+		paddingLeft="8"
+		height="26"
+		verticalScrollPolicy="off"
+		horizontalScrollPolicy="off"
+		click="onClick()"
+		dragEnter="onDragEnter(event)"
+		dragExit="onDragExit(event)"
+		dragDrop="onDragDrop(event)"
+		dragOver="onDragOver(event)"
+		styleName="FilterListEntry">
+		
+		<mx:HBox styleName="FilterEntryLabel" height="100%" width="100%">		
+			<mx:Image source="{iconImage}"/>
+			<mx:Label truncateToFit="true" width="100%" id="entryLabel" text="{text}" paddingLeft="-6"/>
+		</mx:HBox>
+	</mx:HBox>
+	
+</mx:VBox>

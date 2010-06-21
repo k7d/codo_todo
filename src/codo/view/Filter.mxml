@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:codo="codo.view.*"
+	xmlns:codo_tags="codo.view.tags.*"
+	xmlns:codo_folders="codo.view.folders.*"
+	styleName="Filter"
+	minWidth="0"	
+	verticalGap="0"
+	verticalScrollPolicy="off"
+	horizontalScrollPolicy="off"
+	creationComplete="init()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Menu;
+			import mx.managers.PopUpManager;
+			import codo.model.Task;
+			import codo.model.Folder;
+			import mx.events.ListEvent;
+			import codo.model.Tag;
+			import codo.model.TaskService;
+			public static var ADD_ELEMENT: String = "ADD_ELEMENT";
+			public static var SELECT_ELEMENT: String = "SELECT_ELEMENT";
+			public static var REFRESH_DATA: String = "REFRESH_DATA";
+			
+			
+			[Bindable]
+			public var selectedTag:Tag = null;
+			
+			[Bindable]	
+			public var selectedFolder:Folder = null;
+			
+			[Bindable]
+			public var selectedMoreTags: Boolean = false;
+
+			public var settingsMenu: NativeMenu = new NativeMenu();
+			public var settingsMenuNewTag: NativeMenuItem = new NativeMenuItem("New Tag", false);
+			public var settingsMenuNewSubtag: NativeMenuItem = new NativeMenuItem("New Sub-tag", false);
+			public var settingsMenuRenameTag: NativeMenuItem = new NativeMenuItem("Rename tag", false);
+			public var settingsMenuDeleteTag: NativeMenuItem = new NativeMenuItem("Delete tag", false);
+
+
+
+			public function init(): void 		
+			{
+				folderList.addEventListener(FolderList.FOLDER_CHANGE, function(event:Event):void {
+					dispatchEvent(new Event(ADD_ELEMENT));					
+				});
+				
+				folderList.addEventListener(FolderList.SELECT, function(event:Event):void {
+					onFolderListChange();					
+				});
+								
+				tagList.addEventListener(FavTagList.TAG_ADD, function(event:Event):void {
+					dispatchEvent(new Event(ADD_ELEMENT));					
+				});
+				
+				tagList.addEventListener(FavTagList.SELECT, function(event:Event):void {
+					onTagListChange();					
+				});				
+				
+				tagsMore.addEventListener(FilterEntryEvent.SELECT, function(event:FilterEntryEvent):void {
+					tagList.selectedItem = selectedTag = null;
+					folderList.selectedItem = selectedFolder = null;
+					selectedMoreTags = true;
+					settingsMenuDeleteTag.enabled = false;
+					settingsMenuRenameTag.enabled = false;
+					settingsMenuNewSubtag.enabled = false;
+					favouriteButton.enabled = false;
+					dispatchEvent(new Event(SELECT_ELEMENT));
+				});
+				
+				settingsMenuNewTag.addEventListener(Event.SELECT, createTag);
+				settingsMenu.addItem(settingsMenuNewTag);
+				
+				settingsMenuNewSubtag.addEventListener(Event.SELECT, createSubTag);
+				settingsMenuNewSubtag.enabled = false;				
+				settingsMenu.addItem(settingsMenuNewSubtag);
+				
+				settingsMenu.addItem(new NativeMenuItem("", true));
+
+				settingsMenuRenameTag.addEventListener(Event.SELECT, renameTag);
+				settingsMenuRenameTag.enabled = false;
+				settingsMenu.addItem(settingsMenuRenameTag);
+				  
+				settingsMenu.addItem(new NativeMenuItem("", true));
+				  
+				settingsMenuDeleteTag.addEventListener(Event.SELECT, deleteTag);
+				settingsMenuDeleteTag.enabled = false;
+				settingsMenu.addItem(settingsMenuDeleteTag);
+			}
+			
+			
+			
+			public function refreshData(): void
+			{
+				folderList.refreshData();				
+				tagList.refreshData();
+				/*
+				if (selectedFolder == null && selectedTag == null) {
+					onFolderListChange();
+				}
+				*/
+				dispatchEvent(new Event(REFRESH_DATA));							
+			}
+			
+			
+			
+			public function onFolderListChange():void 
+			{
+				selectedFolder = Folder(folderList.selectedItem);
+				tagList.selectedItem = selectedTag = null;
+				selectedMoreTags = tagsMore.isSelected = false;
+				settingsMenuDeleteTag.enabled = false;
+				settingsMenuRenameTag.enabled = false;
+				settingsMenuNewSubtag.enabled = false;				
+				favouriteButton.enabled = false;
+				
+				showUnfavouriteButton();
+				
+				dispatchEvent(new Event(SELECT_ELEMENT));
+			}	
+			
+			
+
+			public function onTagListChange():void 
+			{
+				folderList.selectedItem = selectedFolder = null;
+				selectedMoreTags = tagsMore.isSelected = false;
+
+				selectedTag = Tag(tagList.selectedItem);
+				
+				if (selectedTag) {
+					settingsMenuDeleteTag.enabled = true;
+					settingsMenuRenameTag.enabled = true;
+					settingsMenuNewSubtag.enabled = true;				
+					favouriteButton.enabled = true;
+				} else {
+					settingsMenuDeleteTag.enabled = false;
+					settingsMenuRenameTag.enabled = false;
+					settingsMenuNewSubtag.enabled = false;				
+					favouriteButton.enabled = false;
+				}
+				
+				showUnfavouriteButton();
+				
+				dispatchEvent(new Event(SELECT_ELEMENT));
+			}	
+						
+			
+
+			protected function deleteTag(event:Event): void 
+			{
+				TaskService.instance.deleteTag(selectedTag);
+				tagList.selectedItem = selectedTag = null;
+				refreshData();
+				onTagListChange();
+			}			
+
+
+
+			protected function renameTag(event:Event): void 
+			{
+				tagList.edit();				
+			}			
+			
+			
+			
+			protected function favouriteElement(): void 
+			{
+				if (selectedTag.isFavourite) {
+					selectedTag.isFavourite = false;
+				} else {
+					selectedTag.isFavourite = true;
+				}
+				
+				TaskService.instance.updateTag(selectedTag);
+				if (!selectedMoreTags) {
+					tagList.selectedItem = selectedTag = null;
+				}
+				
+				refreshData();
+				
+				if (!selectedMoreTags) {
+					onTagListChange();
+				}
+				//dispatchEvent(new Event(SELECT_ELEMENT));
+				//onFolderListChange();
+			}			
+			
+			
+			
+			public function showFavouriteButton(): void
+			{
+				favouriteButton.styleName = "FavouriteButton";
+				favouriteButton.toolTip = "Add tag to favourites";				
+			}
+			
+			
+			
+			public function showUnfavouriteButton(): void
+			{
+				favouriteButton.styleName = "UnfavouriteButton";
+				favouriteButton.toolTip = "Remove tag from favourites";				
+			}
+			
+			
+			
+			public function createTag(event:Event): void
+			{				
+				selectedTag = TaskService.instance.addNewTag(true);
+				refreshData();
+				tagList.selectTag(selectedTag);
+				onTagListChange();
+				tagList.edit();
+			}
+
+
+
+			public function createSubTag(event:Event): void
+			{				
+				selectedTag = TaskService.instance.addNewTag(true, selectedTag);
+				refreshData();
+				tagList.selectTag(selectedTag);
+				onTagListChange();
+				tagList.edit();
+			}
+			
+			
+			
+			protected function showSettingsMenu(): void
+			{
+				var bb:Rectangle = settingsButton.getBounds(systemManager.stage);
+				settingsMenu.display(systemManager.stage, bb.x, bb.y + bb.height + 3);
+			}					
+		]]>
+	</mx:Script>
+	
+	<mx:VBox 	
+		verticalGap="0"
+		verticalScrollPolicy="auto"
+		horizontalScrollPolicy="off"
+		width="100%"
+		height="{height-34}">
+		
+		<mx:Label styleName="FilterSectionHeader" text="LISTS" width="100%"/>
+		<codo_folders:FolderList id="folderList" width="100%"/>
+				
+		<mx:Label styleName="FilterSectionHeader" text="FAVOURITE TAGS" width="100%" paddingTop="10"/>		
+		<codo_tags:FavTagList id="tagList" width="100%"/>		
+		<codo:FilterEntry id="tagsMore" iconImage="/codo/assets/more_tags.png" text="All Tags" width="{width-1}" paddingTop="5"/>
+	</mx:VBox>		
+
+	<mx:ControlBar width="100%" height="33" horizontalGap="5">
+		<mx:Button id="favouriteButton" styleName="UnfavouriteButton" width="25" tabEnabled="false" click="favouriteElement()" enabled="false" toolTip = "Remove tag from favourites"/>
+		<mx:Button id="settingsButton" styleName="SettingsButton" tabEnabled="false" click="showSettingsMenu()"/>
+	</mx:ControlBar>							
+</mx:VBox>

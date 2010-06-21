@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Button xmlns:mx="http://www.adobe.com/2006/mxml"	
+	styleName="Button{folder.color}"
+	label="{folder.buttonName}"
+	minWidth="65" 
+	click="onClick()" 
+	tabEnabled="false"
+	toolTip="Move selected items to '{folder.name}' list."
+	labelPlacement="bottom"
+	creationComplete="init()">
+	
+	<mx:Metadata>
+		[Event(name="select", type="codo.view.folders.FolderButtonEvent")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import codo.model.Folder;
+			
+			[Bindable]
+			public var folder: Folder;
+
+			protected function init(): void {
+				if (folder.keyboardShortcut) 
+				{
+					toolTip += '\nKeyboard shortcut: '; 
+					if (folder.keyboardShortcut == 8) {
+ 						//toolTip += 'Backspace';
+ 						toolTip = "Move selected items to 'Trash'.\nKeyboard shortcut: Backspace"; 
+ 					} else {
+ 						toolTip += String.fromCharCode(folder.keyboardShortcut);
+ 					}
+				}
+				
+				//this.textField.filters = [ new DropShadowFilter(1, 45, 0xffffff, 1, 0, 0)];
+			}	
+			
+			
+					
+			protected function onClick(): void
+			{
+				dispatchEvent(new FolderButtonEvent(FolderButtonEvent.SELECT, folder)); 
+			}
+		]]>
+	</mx:Script>
+</mx:Button>

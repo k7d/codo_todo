@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TextArea 
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	styleName="TaskText" 
+	verticalScrollPolicy="off" 
+	wordWrap="true"
+	mouseWheel="owner.dispatchEvent(event); // otherwise the event gets lost in textarea"
+	mouseDown="preventDrag(event)"
+	mouseUp="preventDrag(event)"
+	focusOut="onFocusOut()"
+	keyDown="onKeyDown(event)"
+	change="onChange()"
+	resize="resize()"
+	creationComplete="init()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import mx.core.Window;
+			import mx.core.WindowedApplication;
+			import mx.managers.SystemManager;
+			import mx.events.ResizeEvent;
+			import codo.model.TaskService;
+			import mx.controls.List;
+			import mx.events.PropertyChangeEvent;
+		   	import mx.containers.Canvas;
+            import flash.display.DisplayObject;
+            import codo.view.tags.ACTagList; 
+               
+		   	[Bindable]
+		   	public var strikeThrough:Boolean = false;
+		              
+		    [Bindable]
+		    public var taskList:TaskList; 
+		              
+		   	protected var strike:Canvas = new Canvas();
+		   	
+		   	protected var acList: ACTagList;
+            protected var acStartIndex: int;
+            protected var acEndIndex: int;
+                       
+		   	public function init():void 
+		   	{           
+		   		if(!strike.parent) {
+		   			this.addChild(strike);
+		   		}
+                                
+		   		addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, onPropertyChange);
+           	}
+           
+           
+           
+			protected function onPropertyChange(event: PropertyChangeEvent): void 
+           	{
+           		invalidateDisplayList();	
+           	}
+           
+           
+           
+           	public function resize(): void
+           	{
+           		validateNow();
+           		
+           		textField.width = width;
+           		var h:int = 6;
+	   			for(var i:int = 0; i < this.textField.numLines; i++) {
+	   				var metrics:TextLineMetrics = this.textField.getLineMetrics(i);
+	   				h += metrics.height;
+	   			}
+	   			height = h;
+           	}
+        
+        
+           	override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void {
+		   		super.updateDisplayList(unscaledWidth, unscaledHeight);
+		   		
+		   		this.strike.graphics.clear();
+		   		
+		   		if(this.textField && strikeThrough) {
+		   			this.strike.graphics.moveTo(0, 0);
+		   			this.strike.graphics.lineStyle(1, this.getStyle("color"), 1);
+                                        
+		   			var y:int = 0;
+		   			for(var i:int = 0; i < this.textField.numLines; i++) {
+		   				var metrics:TextLineMetrics = this.textField.getLineMetrics(i);
+		   				if(i == 0) {
+		   					y += (metrics.ascent*0.66)+2;
+		   				}
+		   				else {
+		   					y += metrics.height;
+		   				}
+		   				this.strike.graphics.moveTo(0, y);
+		   				this.strike.graphics.lineTo(metrics.width + 3, y);
+		   			}
+		   		}                                 
+		   	}		
+		   	
+		   	protected function preventDrag(event: MouseEvent):void {
+		   		if (editable) {
+		   			event.stopPropagation();
+		   		}
+		   	}	
+		   	
+
+		   	
+		   	protected function onKeyDown(event:KeyboardEvent): void {
+		   		if (acList) {
+					if (event.keyCode == Keyboard.DOWN || event.keyCode == Keyboard.UP) {
+						acList.dispatchEvent(event);
+						event.preventDefault();		
+					} else if (event.keyCode == Keyboard.ENTER) {
+						onACSelect();
+						event.preventDefault();		
+						event.stopImmediatePropagation();
+					}
+		   		}
+		   	}
+		   	
+		   	
+		   	protected function onACSelect(): void {
+				text = text.substring(0, acStartIndex) + acList.selectedTag.tagLabel + text.substring(acEndIndex);
+				selectionBeginIndex = acStartIndex + acList.selectedTag.tagLabel.length;
+				selectionEndIndex = acStartIndex + acList.selectedTag.tagLabel.length;
+				hideAutoCompletionList();		   		
+		   	}
+		   	
+
+		   	protected function onChange(): void {
+	   			var ci:int = selectionBeginIndex;
+	   			
+	   			for (acStartIndex = ci - 1; acStartIndex >= 0; acStartIndex--) 
+	   			{
+	   				if (text.charAt(acStartIndex) == " " || text.charAt(acStartIndex) == "\n" || text.charAt(acEndIndex) == ",") {
+	   					acStartIndex = -1;
+	   					
+	   				} else if (text.charAt(acStartIndex) == "#") {
+	   					// yeah, this is tag
+	   					break;
+	   				}
+	   			}
+	   			
+	   			if (acStartIndex >= 0) {
+	   				for (acEndIndex = acStartIndex + 1; acEndIndex < text.length; acEndIndex++)  {
+	   					if (text.charAt(acEndIndex) == " " || text.charAt(acEndIndex) == "\n" || text.charAt(acEndIndex) == "," || text.charAt(acEndIndex) == "#") {
+	   						break;
+	   					}
+	   				}			  
+	   				
+	   				var tag: String = text.substring(acStartIndex, acEndIndex);
+	   				
+					if (!acList) {
+						acList = new ACTagList();
+						
+						acList.addEventListener(ResizeEvent.RESIZE, acResize);
+						acList.addEventListener(ListEvent.ITEM_CLICK, function(event:ListEvent):void {
+							onACSelect();
+						});
+						
+						refreshAutoCompletionList(tag, acStartIndex);
+						
+						if (acList.dataProvider.length > 0) {
+		   					systemManager.popUpChildren.addChild(acList);
+		   				} else {
+		   					acList = null;
+		   				}
+		   										
+					} else {
+						refreshAutoCompletionList(tag, acStartIndex);
+						if (acList.dataProvider.length == 0) {
+							hideAutoCompletionList();
+						}
+					}
+						   				 			
+	   			} else if (acList) {
+	   				hideAutoCompletionList();
+	   			}
+
+			}
+			
+			
+			protected function refreshAutoCompletionList(tag:String, acStartIndex:int):void {
+				acList.refreshData(tag);
+				acResize(null);				
+			}
+			
+			
+			protected function hideAutoCompletionList(): void {
+   				systemManager.popUpChildren.removeChild(acList);
+   				acList = null;
+			}
+			
+
+			
+			public function onFocusOut(): void {
+				if (acList) {
+					hideAutoCompletionList();
+				}
+			}
+			
+        
+        
+	        protected function acResize(event: ResizeEvent): void 
+	        {
+	        	if (acList) {
+					// update autocomplete list pos
+					var tr:Rectangle = getBounds(systemManager.stage);
+					var cr:Rectangle = textField.getCharBoundaries(acStartIndex);
+					
+					acList.x = tr.left + cr.left;
+					
+					var ww:Number = SystemManager(systemManager).width;
+					
+					if (acList.x + acList.width > ww) {									
+						acList.x = ww - acList.width;
+					}
+					
+	
+					var wh:Number = SystemManager(systemManager).height;
+					
+					acList.y = tr.top + cr.top + textField.getLineMetrics(textField.getLineIndexOfChar(acStartIndex)).height;
+					
+					if (acList.y + acList.height > wh) {
+						if (tr.top + cr.top > wh - acList.y) { 
+							// we have more space on top, move AC list above the cursor
+							
+							if (tr.top + cr.top < acList.height) {
+								 // still reduce the height							  
+								acList.y = 0; 
+								acList.height = tr.top + cr.top;
+							} else {
+								acList.y = tr.top + cr.top - acList.height;
+								
+							}
+							
+						} else { // reduce the height
+							acList.height = wh - acList.y;
+						}
+					}	
+	        	}
+	        }
+	        
+	        override public function get focusEnabled():Boolean
+	        {
+	        	return editable;
+	        }    			
+		]]>
+	</mx:Script>
+	
+</mx:TextArea>

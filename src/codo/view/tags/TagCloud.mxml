@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<codo_common:BlockTextArea xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:codo_common="codo.view.common.*" 
+	verticalScrollPolicy="auto" 
+	horizontalScrollPolicy="off"
+	wordWrap="true"
+	editable="false"
+	selectable="false"
+	link="openTag(event)"
+	tabEnabled="false"
+	styleName="TagCloud"
+	scroll="updateSelection()"
+	resize="updateSelection()"
+	creationComplete="refreshData()"
+	click="selectTag(event)"
+	addedToStage="onAddedToStage()"
+	minHeight="100"
+	>
+	
+	<mx:Script>
+		<![CDATA[
+			import codo.model.Tag;
+			import codo.model.TaskService;
+			
+			public static var SELECT_TAG: String = "selectTag";
+			
+			public var selectedTag: Tag = null;
+
+			
+			
+			public function refreshData(): void 
+			{
+				var tags: Array = TaskService.instance.getTags(false);
+				var t: String = "";
+				if (tags) {
+					for (var i:int = 0; i < tags.length; i++)
+					{
+						var tag:Tag = tags[i]
+						t += tag.tagLabel + "   ";
+					}
+				}
+				text = t;
+				updateSelection();
+			}
+			
+			
+			
+			public function onAddedToStage(): void
+			{
+				selectedTag = null;
+				refreshData();
+			}
+			
+			
+			public function openTag(event:TextEvent):void
+			{
+				selectedTag = TaskService.instance.getTag(event.text);
+				updateSelection();
+			}
+			
+			
+			
+			public function updateSelection(): void 
+			{
+				if (selectedTag) {
+					var s:int = text.indexOf(selectedTag.tagLabel);
+					showBlock(s, s + selectedTag.tagLabel.length);
+				} else {
+					clearBlock();
+				}				
+			}
+			
+			
+
+			public function selectTag(event:MouseEvent): void {
+				var i:int = textField.getCharIndexAtPoint(event.localX, event.localY);
+				if (i >= 0 && text.charAt(i) != ' ') {
+					for (; i > 0; i--) {
+						if (text.charAt(i - 1) == ' ') {
+							break;
+						}
+					} 
+					
+					for (var ei:int = i; ei < text.length - 1; ei++) {
+						if (text.charAt(ei + 1) == ' ') {
+							break;
+						}
+					} 
+					var tag: String = text.substring(i, ei + 1).toLowerCase();					
+					selectedTag = TaskService.instance.getTag(tag);	
+					updateSelection();
+					
+					dispatchEvent(new Event(SELECT_TAG));
+				} 
+			}			
+		]]>
+	</mx:Script>
+	
+	<mx:Metadata>
+		[Event(name="selectTag", type="flash.events.Event")]
+	</mx:Metadata>
+	
+	
+	
+</codo_common:BlockTextArea>

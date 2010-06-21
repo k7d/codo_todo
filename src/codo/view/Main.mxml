@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"	
+	xmlns:codo="codo.view.*"
+	xmlns:codo_tasks="codo.view.tasks.*"
+	xmlns:codo_tags="codo.view.tags.*"
+	xmlns:codo_folders="codo.view.folders.*"
+	xmlns:codo_common="codo.view.common.*"	
+	height="100%"
+	width="100%"
+	verticalGap="0"
+	verticalScrollPolicy="off"
+	horizontalScrollPolicy="off"
+	styleName="Main"
+	keyDown="onKeyDown(event)">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.SystemManager;
+			import mx.controls.Spacer;
+			import codo.view.folders.FolderButton;
+			import mx.controls.ButtonLabelPlacement;
+			import mx.controls.Button;
+			import codo.view.common.ButtonClickEvent;
+			import codo.view.folders.FolderButtonEvent;
+			import codo.model.Folder;
+			import codo.model.Tag;
+			import mx.events.ListEvent;
+			import mx.collections.ArrayCollection;
+			import codo.model.DB;
+			import codo.model.TaskService;
+			import mx.events.DragEvent;
+			import mx.containers.HBox;
+			import mx.controls.listClasses.IListItemRenderer;
+			import mx.controls.TextInput;
+			import mx.messaging.AbstractConsumer;
+
+			import codo.model.Task;
+			
+			private var notToday: Boolean = false;
+
+			[Bindable]
+			private var tasks:Array;
+			
+			[Bindable]
+			protected var showArchivedTasks: Boolean = false;
+			
+			[Bindable]
+			public var selectedTag:Tag = null;
+			
+			[Bindable]	
+			public var selectedFolder:Folder = null;			
+			
+			private var newTaskButton: Button;
+			private var editTaskButton: Button;
+			private var emptyTrashButton: Button;
+			
+			public function init():void 
+			{
+				filter.addEventListener(Filter.ADD_ELEMENT, function(event:Event):void {
+					taskList.refreshData(false); // do not restore selection, because for some reason it causes selected record to disappear
+				});
+
+				filter.addEventListener(Filter.SELECT_ELEMENT, function(event:Event):void {
+					filterSelect();
+				});
+
+				filter.addEventListener(Filter.REFRESH_DATA, function(event:Event):void {
+					if (currentState == "MoreTags" && moreTags) {
+						moreTags.refreshData();
+					}
+				});
+				
+				taskList.addEventListener(TaskList.UPDATE, function(event:Event):void {
+					filter.refreshData();
+				});
+								
+				filter.refreshData();
+
+				filter.folderList.selectedItem = TaskService.instance.getDefaultFolder(); 
+				filter.onFolderListChange();
+				
+				taskList.setFocus();
+			} 
+			
+			
+			public static var PLATFORM_MAC:String = "MAC";
+			public static var PLATFORM_WIN:String = "WIN";
+			
+			public function get platform(): String 
+			{
+				return Capabilities.version.split(" ", 1)[0];
+			}
+			
+			
+			
+			protected function filterSelect():void {
+				selectedTag = filter.selectedTag;
+				selectedFolder = filter.selectedFolder;
+				
+				if (filter.selectedMoreTags) {
+					currentState = "MoreTags";	
+				} else {
+					currentState = "";
+				}				
+				createToolbar();
+				taskList.refreshData(true,false);				
+				taskList.setFocus();
+			}
+			
+			
+			
+			protected function moreTagsSelect(): void
+			{
+				filter.selectedTag = selectedTag = Tag(moreTags.selectedItem);
+				filter.settingsMenuDeleteTag.enabled = true;
+				filter.settingsMenuRenameTag.enabled = true;
+				filter.settingsMenuNewSubtag.enabled = true;				
+				
+				filter.favouriteButton.enabled = true;
+				if (filter.selectedTag.isFavourite) {
+					filter.showUnfavouriteButton();
+				} else {
+					filter.showFavouriteButton();
+				}			
+				createToolbar();
+				taskList.refreshData(true,false);
+			}
+				
+			
+			
+			
+			private function addNewTask():void
+	        {
+	        	var id:int = TaskService.instance.addNewTask(filter.selectedFolder, filter.selectedTag);
+				taskList.editItem(id);
+				taskList.refreshData();					        	
+				taskList.setFocus();
+	        }
+		
+		
+		
+			private function editTask(): void
+			{
+				if (taskList.selectedItem) {
+					taskList.editItem(Task(taskList.selectedItem).id);
+					taskList.invalidateList();
+					taskList.setFocus();
+				}	
+			}
+			
+			
+			
+			protected function emptyTrash(): void
+			{
+				TaskService.instance.emptyTrash();
+				taskList.refreshData();					        	
+			}
+			
+			
+									
+			protected function onKeyDown(event: KeyboardEvent): void
+			{
+				if (event.keyCode == Keyboard.T) { // Today
+					taskList.updateTaskFolder(TaskService.instance.getFolder(5));
+				} else if (event.keyCode == Keyboard.N) { // Next
+					taskList.updateTaskFolder(TaskService.instance.getFolder(4));
+				} else if (event.keyCode == Keyboard.S) { // Someday
+					taskList.updateTaskFolder(TaskService.instance.getFolder(3));
+				} else if ((event.keyCode == Keyboard.ENTER && (event.ctrlKey || event.commandKey)) || event.keyCode == Keyboard.INSERT) { // New task
+					addNewTask();
+				}
+			}
+			
+			
+			
+			protected function filterShowHide(): void
+			{
+				if (filter.width > 0) {
+					closeFilter.play();
+				} else {
+					openFilter.play();
+				}	
+			}
+			
+			
+			
+			protected function filterResize(): void
+			{
+				if (filter.width > 0) {
+					mainDivider.buttonSelected = false;
+				} else {
+					mainDivider.buttonSelected = true;
+				}	
+			}
+			
+			
+			
+			protected function createToolbar(): void
+			{
+				toolbar.removeAllChildren();
+				
+				if ((selectedFolder != null && selectedFolder.id != Folder.FOLDER_ID_DONE && selectedFolder.id != Folder.FOLDER_ID_TRASH)  
+					|| selectedTag != null) 
+				{
+					newTaskButton = new Button();
+					newTaskButton.styleName = "ButtonNewTask"
+					newTaskButton.label="New To-do";
+					newTaskButton.addEventListener(MouseEvent.CLICK, function(event:MouseEvent):void{addNewTask()});
+					newTaskButton.tabEnabled = false;
+					
+					newTaskButton.toolTip = "Create new to-do.";
+					if (platform == PLATFORM_MAC) {
+						newTaskButton.toolTip += "\nKeyboard shortcut: Cmd + Enter";
+					} else {
+						newTaskButton.toolTip += "\nKeyboard shortcut: Ctrl + Enter";
+					}
+					
+					newTaskButton.labelPlacement = ButtonLabelPlacement.BOTTOM;
+					toolbar.addChild(newTaskButton);
+				
+					editTaskButton = new Button();
+					editTaskButton.styleName = "ButtonEditTask"
+					editTaskButton.label="Edit";
+					editTaskButton.addEventListener(MouseEvent.CLICK, function(event:MouseEvent):void{editTask()});
+					editTaskButton.tabEnabled = false;
+					editTaskButton.toolTip = "Edit selected to-do.\nKeyboard shortcut: Enter";
+					editTaskButton.labelPlacement = ButtonLabelPlacement.BOTTOM;
+					editTaskButton.width = 50;
+					toolbar.addChild(editTaskButton);
+					
+					var spacer: Spacer = new Spacer();
+					spacer.width = 20;
+					toolbar.addChild(spacer);					
+				}
+				
+				if (selectedFolder != null && selectedFolder.id == Folder.FOLDER_ID_TRASH)
+				{
+				
+					emptyTrashButton = new Button();
+					emptyTrashButton.styleName = "ButtonEmptyTrash"
+					emptyTrashButton.label="Empty trash";
+					emptyTrashButton.addEventListener(MouseEvent.CLICK, function(event:MouseEvent):void{emptyTrash()});
+					emptyTrashButton.tabEnabled = false;
+					emptyTrashButton.toolTip = "Permanently delete all items in trash.";
+					emptyTrashButton.labelPlacement = ButtonLabelPlacement.BOTTOM;
+					toolbar.addChild(emptyTrashButton);
+										
+					spacer = new Spacer();
+					spacer.width = 20;
+					toolbar.addChild(spacer);										
+				}
+				
+				if (selectedFolder != null || selectedTag != null)
+				{
+					var folders: Array = TaskService.instance.getFolderButtons();
+					for (var i: int = 0; i < folders.length; i++) 
+					{
+						var folder: Folder = folders[i];
+						if (selectedFolder && selectedFolder.id == folder.id) 
+						{
+							continue;
+						}	
+						
+						var folderButton: FolderButton = new FolderButton();
+						folderButton.folder = folder;
+						folderButton.addEventListener(FolderButtonEvent.SELECT, function(event:FolderButtonEvent):void {
+							taskList.updateTaskFolder(event.folder);
+						})
+						toolbar.addChild(folderButton);
+					}
+				}
+				 	
+			}						
+		]]>
+	</mx:Script>
+	
+
+	<codo_common:ExtendedDividedBox
+		id="mainDivider"
+		width="100%"
+		height="100%"
+		liveDragging="false"
+		direction="horizontal"		
+		buttonClick="filterShowHide()"
+		showButton="true"
+		styleName="Divider"
+		verticalScrollPolicy="off"
+		horizontalScrollPolicy="off">
+	
+		<codo:Filter
+			id="filter"
+			width="150"
+			height="100%"
+			resize="filterResize()"/>
+
+		<mx:VDividedBox
+			id="content" 
+			width="100%" 
+			height="100%"
+			minWidth="200"
+			verticalScrollPolicy="off"
+			horizontalScrollPolicy="off"
+			styleName="Divider">
+
+			<mx:VBox
+				id="taskListFrame"
+				styleName="TaskListFrame" 
+				width="100%" height="100%"
+				verticalScrollPolicy="off"
+				horizontalScrollPolicy="off"
+				verticalGap="0"
+				>
+				
+				<mx:ControlBar styleName="TaskListHeader" height="51" width="100%" id="toolbar">
+				</mx:ControlBar>			
+				
+				<codo_tasks:TaskList 
+					id="taskList" 
+					width="100%" 
+					height="100%"
+					tabEnabled="false"
+					filterByFolder="{selectedFolder}"
+					filterByTag="{selectedTag}"/>		
+			</mx:VBox>
+			
+		</mx:VDividedBox>
+			
+	</codo_common:ExtendedDividedBox>
+	
+	<mx:Resize id="closeFilter" targets="{[filter]}" duration="400" widthTo="0"/>
+	<mx:Resize id="openFilter" targets="{[filter]}" duration="400" widthTo="150"/>
+
+	<mx:states>
+		<mx:State name="MoreTags">
+			<mx:AddChild position="after" relativeTo="{filter}">
+				<mx:VBox styleName="MoreTagsListFrame" height="100%" width="150" minWidth="150" >
+					<codo_tags:MoreTagsList id="moreTags" width="100%" height="100%" change="moreTagsSelect()" updateTag="taskList.refreshData(false);"/>					
+				</mx:VBox>
+			</mx:AddChild>
+		</mx:State>		
+	</mx:states>
+	
+</mx:VBox>

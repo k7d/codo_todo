@@ -1,0 +1,450 @@
+WindowedApplication {
+	border-skin: Embed("/codo/assets/main.png",scaleGridLeft="6",scaleGridRight="8",scaleGridTop="4",scaleGridBottom="6");
+	font-family:  Lucida Grande,Arial;
+	font-size: 12;
+}
+
+ControlBar {
+	padding-left: 5;
+	padding-top: 5;
+	padding-right: 5;
+	padding-bottom: 5;
+}
+
+ScrollBar {
+	track-height: 13;	
+	up-arrow-skin: Embed(source="/codo/assets/scrollbar_up.png", scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	up-arrow-disabled-skin: Embed(source="/codo/assets/scrollbar_dis.png", scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	down-arrow-skin: Embed(source="/codo/assets/scrollbar_down.png", scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");
+	down-arrow-disabled-skin: Embed(source="/codo/assets/scrollbar_dis.png", scaleGridLeft="1", scaleGridTop="1", scaleGridRight="16", scaleGridBottom="16");	
+	thumb-skin: Embed(source="/codo/assets/scrollbar_slider.png", scaleGridLeft="8",  scaleGridRight="9", scaleGridTop="11",scaleGridBottom="12"); 	
+	track-skin: Embed(source="/codo/assets/scrollbar_bg.png", scaleGridLeft="8",scaleGridRight="9", scaleGridTop="11",  scaleGridBottom="12");
+}
+
+/*
+ScrollBar{
+	trackSkin:Embed(source='/codo/assets/track_skin.png');
+	thumbUpSkin:Embed(source='/codo/assets/thum_skin.png', scaleGridLeft=8, scaleGridRight=9, scaleGridTop=11,scaleGridBottom=12);
+	thumbOverSkin:Embed(source='/codo/assets/thum_skin.png', scaleGridLeft=8, scaleGridRight=9, scaleGridTop=11,scaleGridBottom=12);
+	thumbDownSkin:Embed(source='/codo/assets/thum_skin.png', scaleGridLeft=8, scaleGridRight=9, scaleGridTop=11,scaleGridBottom=12);
+	upArrowUpSkin:Embed(source='/codo/assets/scroll_arrow_up_up.png');
+	upArrowDownSkin:Embed(source='/codo/assets/scroll_arrow_up_over.png');
+	upArrowOverSkin:Embed(source='/codo/assets/scroll_arrow_up_over.png');
+	downArrowUpSkin:Embed(source='/codo/assets/scroll_arrow_down_up.png');
+	downArrowDownSkin:Embed(source='/codo/assets/scroll_arrow_down_over.png');
+	downArrowOverSkin:Embed(source='/codo/assets/scroll_arrow_down_over.png');
+}
+*/
+
+
+
+.Divider {
+	divider-skin: Embed("/codo/assets/divider/grip.png");
+    barFillColors: #fcfcfc,#eaeaea;
+	button-width: 20;
+	divider-thickness: 6;
+	horizontal-gap: 6;
+	vertical-gap: 6;
+}
+
+
+
+.Main {
+	/*border-skin: Embed("/codo/assets/main.png",scaleGridLeft="6",scaleGridRight="8",scaleGridTop="4",scaleGridBottom="6");*/
+	horizontal-gap: 3;
+	padding-left: 0;
+	padding-top: 0;
+	padding-right: 0;
+}
+
+.TaskListHeader {
+	border-skin: Embed("/codo/assets/toolbar.png",scaleGridLeft="4",scaleGridRight="5",scaleGridTop="4",scaleGridBottom="6");
+	padding-top: 3;
+	padding-bottom: 4;
+	horizontal-gap: 0;
+}			
+
+.TaskListFrame {
+	border-skin: Embed("/codo/assets/task_list_frame.png",scaleGridLeft="24",scaleGridRight="25",scaleGridTop="24",scaleGridBottom="25");
+	padding-left: 1;
+	padding-right:0;
+}		
+
+.TaskList {
+	/*border-skin: Embed("/codo/assets/task_list.png",scaleGridLeft="2",scaleGridRight="3",scaleGridTop="2",scaleGridBottom="3");*/
+	padding-bottom: 0;
+	padding-left: 0;
+	padding-top: 0;
+	padding-right: 0;
+	border-style: none;
+	background-alpha: 0;
+	theme-color: #bababa;
+}
+
+
+.TaskBorder, .TaskBorderSelected, .TaskBorderEdit, .TaskBorderDrag,.TaskBorderDarkSelected {
+	padding-bottom: 2;
+	padding-left: 5;
+	padding-top: 6;
+	padding-right: 5;
+}
+
+.TaskBorder {
+	border-skin: Embed("/codo/assets/task_border.png",scaleGridLeft="31",scaleGridRight="33",scaleGridTop="6",scaleGridBottom="8");
+}
+
+.TaskBorderSelected {
+	border-skin: Embed("/codo/assets/task_border_selected.png",scaleGridLeft="31",scaleGridRight="33",scaleGridTop="6",scaleGridBottom="8");
+}
+
+.TaskBorderDarkSelected {
+	border-skin: Embed("/codo/assets/task_border_dark_selected.png",scaleGridLeft="31",scaleGridRight="33",scaleGridTop="6",scaleGridBottom="8");
+}
+
+.TaskBorderEdit {
+	border-skin: Embed("/codo/assets/task_border_edit.png",scaleGridLeft="31",scaleGridRight="33",scaleGridTop="6",scaleGridBottom="8");
+}
+
+.TaskBorderLast, .TaskBorderSelectedLast, .TaskBorderDarkSelectedLast, .TaskBorderEditLast {
+	padding-bottom: 4;
+	padding-left: 5;
+	padding-top: 5;
+	padding-right: 5;
+}
+
+.TaskBorderLast {
+	border-skin: Embed("/codo/assets/task_border_last.png",scaleGridLeft="31",scaleGridRight="33",scaleGridTop="6",scaleGridBottom="8");
+}
+
+.TaskBorderSelectedLast {
+	border-skin: Embed("/codo/assets/task_border_selected_last.png",scaleGridLeft="31",scaleGridRight="33",scaleGridTop="6",scaleGridBottom="8");
+}
+
+.TaskBorderDarkSelectedLast {
+	border-skin: Embed("/codo/assets/task_border_dark_selected_last.png",scaleGridLeft="31",scaleGridRight="33",scaleGridTop="6",scaleGridBottom="8");
+}
+
+.TaskBorderEditLast {
+	border-skin: Embed("/codo/assets/task_border_edit_last.png",scaleGridLeft="31",scaleGridRight="33",scaleGridTop="6",scaleGridBottom="8");
+}
+
+.Task1 {
+	border-skin: Embed("/codo/assets/task1.png",scaleGridLeft="31",scaleGridRight="33",scaleGridTop="6",scaleGridBottom="8");
+}		
+
+.Task2 {
+	border-skin: Embed("/codo/assets/task2.png",scaleGridLeft="31",scaleGridRight="33",scaleGridTop="6",scaleGridBottom="8");
+}		
+
+.Task3 {
+	border-skin: Embed("/codo/assets/task3.png",scaleGridLeft="31",scaleGridRight="33",scaleGridTop="6",scaleGridBottom="8");	
+}			
+
+.Task4 {
+	border-skin: Embed("/codo/assets/task4.png",scaleGridLeft="31",scaleGridRight="33",scaleGridTop="6",scaleGridBottom="8");	
+	theme-color: #fafafa;	
+}	
+
+.Task5 {
+	border-skin: Embed("/codo/assets/task5.png",scaleGridLeft="31",scaleGridRight="33",scaleGridTop="6",scaleGridBottom="8");	
+}			
+
+.Task6 {
+	border-skin: Embed("/codo/assets/task6.png",scaleGridLeft="31",scaleGridRight="33",scaleGridTop="6",scaleGridBottom="8");	
+}			
+
+.TaskDrag {
+	border-skin: Embed("/codo/assets/task_drag.png",scaleGridLeft="6",scaleGridRight="8",scaleGridTop="6",scaleGridBottom="8");
+	font-family:  Lucida Grande,Arial;
+}
+
+.TaskText {
+	border-style: none;
+	background-alpha: 0;
+	color: #000000;
+	theme-color: #fafafa;
+	/*
+	font-anti-alias-type: advanced;
+	font-sharpness: 400;
+	font-thickness: 200;
+	font-grid-fit-type: pixel;
+	*/
+}
+
+.TaskCheck {
+	up-icon: Embed("/codo/assets/check_over.png");
+	over-icon: Embed("/codo/assets/check_over.png");
+	down-icon: Embed("/codo/assets/check_sel_over.png");
+	selected-up-icon: Embed("/codo/assets/check_sel.png");
+	selected-over-icon: Embed("/codo/assets/check_sel_over.png");
+	selected-down-icon: Embed("/codo/assets/check_over.png");
+	padding-right: 3;		
+}
+
+.NotTodayButton {
+}
+
+.ButtonNewTask,.ButtonEditTask,.Button1,.Button2, .Button3, .Button4, .Button5, .Button6, .ButtonEmptyTrash {
+	padding-top: 3;
+	up-skin: Embed("/codo/assets/empty.png",scaleGridLeft="4",scaleGridRight="6",scaleGridTop="4",scaleGridBottom="6");
+	font-weight: normal;
+	padding-bottom: -2;
+	padding-left: 3;
+	padding-right: 3;
+}
+
+.ButtonNewTask {
+	icon: Embed("/codo/assets/new_task.png");
+}
+
+.ButtonEditTask {
+	icon: Embed("/codo/assets/edit.png");
+}
+
+.ButtonEmptyTrash {
+	icon: Embed("/codo/assets/empty_trash.png");
+}
+
+.Button1 {
+	icon: Embed("/codo/assets/folder1_button.png");
+}
+
+.Button2 {
+	icon: Embed("/codo/assets/folder2_button.png");
+}
+
+.Button3 {
+	icon: Embed("/codo/assets/folder3_button.png");
+}
+
+.Button4 {
+	icon: Embed("/codo/assets/folder4_button.png");
+}
+
+.Button5 {
+	icon: Embed("/codo/assets/folder5_button.png");
+}
+
+.Button6 {
+	icon: Embed("/codo/assets/folder6_button.png");
+}
+
+
+.Filter {
+	border-skin: Embed("/codo/assets/filter.png",scaleGridLeft="6",scaleGridRight="8",scaleGridTop="6",scaleGridBottom="8");
+	padding-right: 1;
+	padding-left: 0;
+}
+
+
+.FilterSectionHeader {
+	color: #738192;
+	font-weight: bold;
+	padding-left: 5;
+	padding-top: 5;
+}
+
+
+.FilterList {
+	background-alpha: 0;
+	padding-bottom: 0;
+	padding-left: 0;
+	padding-top: 0;
+	padding-right: 0;
+	border-style: none;
+	theme-color: #ededed;
+}
+
+.FilterListEntry {
+	vertical-align: middle;
+}
+
+.FilterListEntrySelected {
+	vertical-align: middle;
+	background-color: #98a9c8;
+	color: #ffffff;
+}
+
+.FilterListEntryFocus {
+	vertical-align: middle;
+	border-skin: Embed("/codo/assets/filter_focus.png",scaleGridLeft="5",scaleGridRight="8",scaleGridTop="5",scaleGridBottom="8");
+}
+
+.FolderLabel {
+	padding-left: 8;
+	vertical-align: middle;
+}
+
+
+.TagComplete,.TagCompleteSelected  {
+	padding-left: 13;
+	padding-right: -7;
+	padding-top: 3;	
+}
+
+.TagComplete{
+	up-icon: Embed("/codo/assets/check_over.png");
+	over-icon: Embed("/codo/assets/check_over.png");
+	down-icon: Embed("/codo/assets/check.png");
+	selected-up-icon: Embed("/codo/assets/check.png");
+	selected-over-icon: Embed("/codo/assets/check.png");
+	selected-down-icon: Embed("/codo/assets/check_over.png");			
+} 
+
+.TagCompleteSelected {
+	up-icon: Embed("/codo/assets/check_over_sel.png");
+	over-icon: Embed("/codo/assets/check_over_sel.png");
+	down-icon: Embed("/codo/assets/check_sel.png");
+	selected-up-icon: Embed("/codo/assets/check_sel.png");
+	selected-over-icon: Embed("/codo/assets/check_sel.png");
+	selected-down-icon: Embed("/codo/assets/check_over_sel.png");			
+} 
+
+.TagLabel {
+	padding-left: 8;
+	vertical-align: middle;
+	horizontal-gap: 0;
+}
+
+.FilterEntryLabel {
+	vertical-align: middle;
+}
+
+.FilterEntryLabelSelected {
+	color: #ffffff;
+	vertical-align: middle;
+}
+
+.FilterEntryCollapse, .FilterEntryCollapseSelected {
+	padding-left: -6;
+	padding-right: -8;
+	padding-top: 5;
+}
+
+.FilterEntryCollapse {
+	up-icon: Embed("/codo/assets/collapse_closed.png");
+	over-icon: Embed("/codo/assets/collapse_closed.png");
+	down-icon: Embed("/codo/assets/collapse_closed.png");
+	selected-up-icon: Embed("/codo/assets/collapse_open.png");
+	selected-over-icon: Embed("/codo/assets/collapse_open.png");
+	selected-down-icon: Embed("/codo/assets/collapse_open.png");	
+} 
+
+.FilterEntryCollapseSelected {
+	up-icon: Embed("/codo/assets/collapse_closed_w.png");
+	over-icon: Embed("/codo/assets/collapse_closed_w.png");
+	down-icon: Embed("/codo/assets/collapse_closed_w.png");
+	selected-up-icon: Embed("/codo/assets/collapse_open_w.png");
+	selected-over-icon: Embed("/codo/assets/collapse_open_w.png");
+	selected-down-icon: Embed("/codo/assets/collapse_open_w.png");	
+} 
+
+.TagCloud {
+	border-skin: Embed("/codo/assets/tag_cloud.png",scaleGridLeft="2",scaleGridRight="3",scaleGridTop="2",scaleGridBottom="3");	
+	leading: 10;
+	padding-bottom: 7;
+	padding-top: 6;
+	padding-left: 7;
+	padding-right: 5;
+}
+
+.TaskDragProxy {
+}
+
+.FavouriteButton {
+	icon: Embed("/codo/assets/favourite.png");
+	disabled-icon: Embed("/codo/assets/favourite_dis.png");
+	padding-left: -5;
+	padding-right: -5;
+}
+
+.UnfavouriteButton {
+	icon: Embed("/codo/assets/unfavourite.png");
+	disabled-icon: Embed("/codo/assets/unfavourite_dis.png");
+	padding-left: -5;
+	padding-right: -5;
+}
+
+.DeleteButton {
+	icon: Embed("/codo/assets/minus.png");
+	disabled-icon: Embed("/codo/assets/minus_dis.png");
+}
+
+.CreateButton {
+	icon: Embed("/codo/assets/plus.png");
+}
+
+.SettingsButton {
+	icon: Embed("/codo/assets/settings.png");
+}
+
+.TaskDragProxyEntry {
+	font-size: 12;
+	border-skin: Embed("/codo/assets/task_drag_proxy.png",scaleGridLeft="2",scaleGridRight="3",scaleGridTop="2",scaleGridBottom="3");
+	padding-left: 1;
+	padding-right: 1;
+}
+
+.TaskDragProxyEntryLast {
+	padding-left: 1;
+	padding-right: 1;
+	border-skin: Embed("/codo/assets/task_drag_proxy_last.png",scaleGridLeft="2",scaleGridRight="3",scaleGridTop="2",scaleGridBottom="3");
+	font-size: 12;
+}
+
+
+.MoreTagsLabel {
+	vertical-align: middle;
+}
+
+.MoreTagsListFrame {
+	border-skin: Embed("/codo/assets/subfilter.png",scaleGridLeft="6",scaleGridRight="8",scaleGridTop="6",scaleGridBottom="8");
+	padding-right: 1;
+	padding-left: 1;
+}
+
+.MoreTagsList {
+	padding-top: 0;
+	padding-right: 0;
+	padding-left: 0;
+	padding-bottom: 0;
+	border-style: none;
+	background-alpha: 0;
+}
+
+.FilterListEdit {
+	background-color: #ffffff;
+	color: #000000;
+	border-style: solid;
+	border-thickness: 1;
+	border-color: #999999;
+	padding-top: 0px;
+	padding-bottom: 0;
+	padding-left: 0;
+	padding-right: 0;
+	vertical-align: bottom;
+}
+
+@font-face {
+   src:url("/codo/assets/lucidaGrande.swf");
+   fontFamily: "Lucida Grande";
+}
+
+@font-face {
+   src:url("/codo/assets/lucidaGrande.swf");
+   fontFamily: "Lucida Grande";
+   fontWeight:bold;
+}
+
+.ACTagList {
+	padding-top: 0;
+	padding-right: 0;
+	padding-left: 0;
+	padding-bottom: 0;
+	/*
+	border-style: none;
+	background-alpha: 0;
+	*/
+	font-family:  Lucida Grande,Arial;
+	font-size: 12;
+}

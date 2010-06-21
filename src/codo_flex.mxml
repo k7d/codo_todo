@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:WindowedApplication 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="absolute" 
+	xmlns:codo="codo.view.*" 
+	initialize="init()"
+	width="800"
+	height="600"
+	minWidth="600"
+	minHeight="300"
+	keyUp="onKeyUp(event)"
+	showStatusBar="false"
+	verticalScrollPolicy="off"
+	horizontalScrollPolicy="off"
+	>
+	
+	<mx:Style source="codo_flex.css">
+	
+	</mx:Style>
+	<mx:Script>
+		<![CDATA[
+			import mx.events.CloseEvent;
+			import air.update.events.UpdateEvent;
+			import air.update.ApplicationUpdaterUI;
+			import mx.controls.Alert;
+			
+			import flash.data.SQLResult;
+			import flash.filesystem.File;
+			import flash.data.SQLStatement;
+			import flash.data.SQLConnection;
+			import flash.events.SQLEvent;
+			import flash.events.SQLErrorEvent;
+
+			import codo.model.DB;
+			
+			private var appUpdater:ApplicationUpdaterUI = new ApplicationUpdaterUI;
+			
+			private var isExiting: Boolean = false;
+			
+			private var isMac: Boolean = false;
+			
+			private function init():void
+			{
+				var findPlatform:Array=Capabilities.version.split(" ", 1);
+				var platform:String = findPlatform[0];
+				if (platform == "MAC") {
+					isMac = true;
+				}
+				
+				if (isMac) {
+					// allow to close window without exiting app 
+					nativeApplication.addEventListener(Event.EXITING, function(event:Event):void {
+						isExiting = true;
+					});
+	
+					addEventListener(Event.CLOSING, function(event:Event):void {
+						if (!isExiting) {
+							event.preventDefault();
+							visible = false;
+						}	
+					});
+					
+					addEventListener(InvokeEvent.INVOKE, function(event:InvokeEvent):void {
+						if (!visible) {
+							visible = true;
+						}
+					});
+				}
+				
+				checkForAppUpdate();
+				DB.instance.init("Codo.db", initCallback);
+			}
+			
+			
+			
+			private function checkForAppUpdate():void
+			{
+				appUpdater.configurationFile = new File("app:/updateConfig.xml");
+                appUpdater.isCheckForUpdateVisible = false;
+                appUpdater.initialize();
+                appUpdater.addEventListener(UpdateEvent.INITIALIZED, onUpdate);
+                appUpdater.addEventListener(ErrorEvent.ERROR, onError);               
+           	}			
+			
+			private function initCallback(success:Boolean):void
+			{
+				if (success) {
+					main.init();
+				}
+			}
+			
+			private function onError(event:ErrorEvent):void
+			{
+				Alert.show(event.toString());
+			}
+               
+			private function onUpdate(event:UpdateEvent):void
+			{
+				appUpdater.checkNow();
+			}			
+               
+               
+			protected function onKeyUp(event:KeyboardEvent):void 
+			{
+				if (event.keyCode == Keyboard.R && event.shiftKey && event.altKey && event.ctrlKey) {
+	            	Alert.show("Are you sure you want to reset Codo?", "Reset Codo", Alert.YES | Alert.NO, this, function(event:CloseEvent):void {
+	            		if (event.detail == Alert.YES) {
+	            			DB.instance.reset();
+	            			initCallback(true);
+	            		}
+	            	});
+	   			}   	
+			}
+ 
+		]]>
+	</mx:Script>
+	
+	<codo:Main id="main"/>
+	
+</mx:WindowedApplication>

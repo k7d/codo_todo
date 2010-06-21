@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:codo="codo.view.*" 
+	height="26"
+	width="100%"
+	verticalScrollPolicy="off"
+	horizontalScrollPolicy="off"
+	dragEnter="onDragEnter(event)"
+	dragExit="onDragExit(event)"
+	dragDrop="onDragDrop(event)"
+	dragOver="onDragOver(event)"
+	styleName="FilterListEntry"
+	paddingLeft="5">
+	
+	<mx:Script>
+	<![CDATA[
+		import mx.core.Repeater;
+		import codo.model.Folder;
+		import codo.model.Tag;
+		import mx.managers.DragManager;
+		import codo.model.Task;
+		import mx.events.ListEvent;
+		import codo.model.TaskService;
+		import mx.events.DragEvent;
+		import mx.controls.listClasses.BaseListData;
+
+
+		
+    	public var tagList:MoreTagsList;	    	    
+	    public var tag: Tag;
+	    
+
+                        
+        override public function set data(value:Object):void 
+        {
+            super.data = value;
+            
+            if (owner is Repeater) {
+            	tagList = MoreTagsList(Repeater(owner).owner);
+            } else {
+            	tagList = MoreTagsList(owner);
+            }            
+            
+            if (tagList) {
+            	tagList.addEventListener(MoreTagsList.REFRESH, function(event:Event):void {
+            		focusOff();
+            	});
+            }
+            
+            if (data) {
+				if (data.isFavourite) {
+					tagImage.source = "/codo/assets/tag.png";
+				} else {
+					tagImage.source = "/codo/assets/tag_inactive.png";
+				}
+            }            
+			focusOff();
+        }       
+        
+        
+        
+        protected function focusOn():void 
+        {
+        	styleName = "FilterListEntryFocus";
+        };
+         			
+        protected function focusOff():void 
+        {
+    		if (data && tagList.selectedItem && tagList.selectedItem.tag == data.tag) {
+    			styleName = "FilterListEntrySelected";
+    		} else {
+    			styleName = "FilterListEntry";
+    		}
+        };
+        
+        
+        
+        protected function onRefresh(event:Event): void 
+        {
+        	focusOff();        	
+        }
+         			   			
+
+		protected function onDragEnter(event: DragEvent):void {
+			if (event.dragSource.hasFormat("items")) {
+				var items:Array = event.dragSource.dataForFormat("items") as Array;
+				if (items.length > 0 && items[0] is Task) {
+    				DragManager.acceptDragDrop(this);
+    				focusOn();
+				}
+			}
+		}		
+
+
+
+		protected function onDragOver(event: DragEvent):void {
+			DragManager.showFeedback(DragManager.LINK);
+		}
+		
+		
+		
+		protected function onDragExit(event: DragEvent):void {
+			focusOff();
+		}
+		
+
+		protected function onDragDrop(event: DragEvent):void {
+			focusOff();
+			
+			if (event.dragSource.hasFormat("items")) {
+				var items:Array = event.dragSource.dataForFormat("items") as Array;
+				if (items.length > 0 && items[0] is Task) {
+					TaskService.instance.assignTasksToTag(items, Tag(data));
+					tagList.dispatchEvent(new Event(MoreTagsList.TAG_UPDATE));    	
+				}
+			}			
+		}
+		
+	]]>
+	</mx:Script>
+	
+	<mx:HBox styleName="MoreTagsLabel" height="26" width="100%" verticalAlign="middle">
+		<mx:Image width="20" id="tagImage"/>
+		<mx:Label truncateToFit="true" width="{width - 30}" id="tagLabel" text="{data.tagLabel}" paddingLeft="-6"/>			
+	</mx:HBox>
+</mx:HBox>
+
+

@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:codo_common="codo.view.common.*" 
+	height="26"
+	verticalScrollPolicy="off"
+	horizontalScrollPolicy="off"
+	dragEnter="onDragEnter(event)"
+	dragExit="onDragExit(event)"
+	dragDrop="onDragDrop(event)"
+	dragOver="onDragOver(event)"
+ keyDown="onKeyDown(event)"	
+	doubleClickEnabled="true"
+	doubleClick="startEdit()"	
+	styleName="FilterListEntry"	
+	currentState="View">
+	
+	<mx:Script>
+	<![CDATA[
+		import mx.core.Repeater;
+		import codo.model.Folder;
+		import codo.model.Tag;
+		import mx.managers.DragManager;
+		import codo.model.Task;
+		import mx.events.ListEvent;
+		import codo.model.TaskService;
+		import mx.events.DragEvent;
+		import mx.controls.listClasses.BaseListData;
+
+
+		
+    	public var tagList:FavTagList;	    	    
+	    public var tag: Tag;
+	    
+		[Bindable]
+		public var viewText: String;
+		[Bindable]
+		public var editText: String;
+		[Bindable]
+		public var viewPadding: Number;
+                        
+        override public function set data(value:Object):void 
+        {
+            super.data = value;
+            if (owner is Repeater) {
+            	tagList = FavTagList(Repeater(owner).owner);
+            } else {
+            	tagList = FavTagList(owner);
+            }            
+            
+            if (tagList) {
+            	tagList.addEventListener(FavTagList.REFRESH, function(event:Event):void {
+            		focusOff();
+            	});
+
+            	tagList.addEventListener(FavTagList.EDIT, function(event:Event):void {
+            		if (data && tagList.selectedItem && tagList.selectedItem.tag == data.tag) {
+            			startEdit();
+            		}
+            	});
+            }
+            
+            if (data) {
+            	parseTag();
+            } else {
+            	editText = "";
+            }
+        }       
+        
+        
+        protected function parseTag(): void
+        {
+			var parts:Array = TaskService.instance.splitTag(data.tagLabel);
+        	if (parts.length > 1) {
+        		viewText = parts[parts.length - 2] + "/";
+        		editText = data.tagLabel.substring(viewText.length);
+        		viewPadding = -3;
+        	} else {
+        		viewText = "#";
+        		viewPadding = -10;
+        		editText = data.tagLabel.substring(1);
+        	}                  	
+        }
+        
+        
+        protected function focusOn():void 
+        {
+        	styleName = "FilterListEntryFocus";
+        };
+         			
+        protected function focusOff():void 
+        {
+    		if (data && tagList.selectedItem && tagList.selectedItem.tag == data.tag) {
+    			styleName = "FilterListEntrySelected";
+    		} else {
+    			styleName = "FilterListEntry";
+    		}
+        };
+        
+        
+        
+        protected function onRefresh(event:Event): void 
+        {
+        	focusOff();        	
+        }
+         			   			
+
+		protected function onDragEnter(event: DragEvent):void {
+			if (event.dragSource.hasFormat("items")) {
+				var items:Array = event.dragSource.dataForFormat("items") as Array;
+				if (items.length > 0 && items[0] is Task) {
+    				DragManager.acceptDragDrop(this);
+    				focusOn();
+				}
+			}
+		}		
+
+
+
+		protected function onDragOver(event: DragEvent):void {
+			DragManager.showFeedback(DragManager.LINK);
+		}
+		
+		
+		
+		protected function onDragExit(event: DragEvent):void {
+			focusOff();
+		}
+		
+
+		protected function onDragDrop(event: DragEvent):void {
+			focusOff();
+			
+			if (event.dragSource.hasFormat("items")) {
+				var items:Array = event.dragSource.dataForFormat("items") as Array;
+				if (items.length > 0 && items[0] is Task) {
+					TaskService.instance.assignTasksToTag(items, Tag(data));
+					tagList.dispatchEvent(new Event(FavTagList.TAG_ADD));    	
+				}
+			}			
+		}
+		
+		
+		protected function startEdit(): void {
+			//trace('startEdit');
+			currentState = "Edit";
+		}
+		
+        protected function onEdit(): void {
+        	//trace('onEdit');
+        	if (tagEdit) {
+        		//trace('onEdit tagEdit');
+				tagEdit.setFocus();
+        		tagEdit.drawFocus(false);
+				tagEdit.selectionBeginIndex = 0;
+				tagEdit.selectionEndIndex = editText.length;
+        	}
+        }	
+        
+        
+        
+		protected function onKeyDown(event:KeyboardEvent):void {
+			if (currentState == "Edit") {
+				event.stopPropagation();
+				if (event.keyCode == Keyboard.ENTER) {
+					endEdit();
+				} else if (event.keyCode == Keyboard.ESCAPE) {
+					parseTag(); // undo
+					currentState="View";		
+				}
+			} else  {
+				if (event.keyCode == Keyboard.ENTER) {
+					startEdit();
+				}
+			}
+		}    		 		
+        
+        
+        
+        protected function endEdit(): void {
+        	//trace('endEdit');
+        	editText = tagEdit.text;
+        	TaskService.instance.renameTag(Tag(data), viewText + editText);
+        	currentState="View";	
+        	tagList.refreshData();
+        	tagList.dispatchEvent(new Event(FavTagList.SELECT));
+        }	     
+        
+        protected function onEditChange(): void {
+        	tagEdit.text = tagEdit.text.replace(/[\s\#\,]/g, '_');
+        }
+
+	]]>
+	</mx:Script>
+	
+	<mx:HBox styleName="TagLabel" height="26" width="100%">
+		<mx:Image id="tagIcon" source="/codo/assets/tag.png"/>		
+	</mx:HBox>	
+	
+	<mx:states>
+		<mx:State name="View">
+			<mx:AddChild relativeTo="{tagIcon}" position="after">
+				<mx:Label truncateToFit="true" width="{width-30}" id="tagText" text="{data.tagLabel}"/>				
+			</mx:AddChild>
+		</mx:State>
+		
+		<mx:State name="Edit" enterState="onEdit()">
+			<mx:AddChild relativeTo="{tagIcon}" position="after">
+				<mx:Label id="viewTextLabel" truncateToFit="true" text="{viewText}" paddingRight="{viewPadding}"/>
+			</mx:AddChild>
+			<mx:AddChild relativeTo="{viewTextLabel}" position="after">
+				<codo_common:AutoSizeTextInput styleName="FilterListEdit" id="tagEdit" text="{editText}" focusOut="endEdit()" height="22" max="{width-viewTextLabel.width-30}" change="onEditChange()"/>
+			</mx:AddChild>	
+		</mx:State>
+	</mx:states>
+		
+</mx:HBox>
+
+

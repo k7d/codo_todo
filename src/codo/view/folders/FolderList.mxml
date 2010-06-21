@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:codo_folders="codo.view.folders.*"
+	styleName="FilterList"
+	verticalScrollPolicy="off"
+	horizontalScrollPolicy="off"	
+	tabEnabled="false"
+	verticalGap="0">
+	
+	<mx:Script>
+		<![CDATA[
+			import codo.model.Folder;
+			import mx.events.ListEvent;
+			import codo.model.Task;
+			import mx.managers.DragManager;
+			import mx.events.DragEvent;
+			import codo.model.Tag;
+			import mx.controls.listClasses.IListItemRenderer;
+			import mx.collections.ArrayCollection;
+			import codo.model.TaskService;
+			
+			public static var FOLDER_CHANGE: String = "FOLDER_CHANGE";
+			
+			public static var SELECT: String = "SELECT";
+			public static var REFRESH: String = "REFRESH";
+			
+			public var _selectedItem : Folder = null;
+
+			public function get selectedItem(): Folder
+			{
+				return _selectedItem;
+			}
+			
+			public function set selectedItem(item:Folder): void
+			{
+				_selectedItem = item;
+				dispatchEvent(new Event(REFRESH));
+			}
+			
+			public function refreshData():void
+			{
+				r.dataProvider = TaskService.instance.getFolders();
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:Repeater id="r" dataProvider="[]" recycleChildren="true">
+		<codo_folders:FolderListEntry data="{r.currentItem}" width="100%"/>
+	</mx:Repeater>
+</mx:VBox>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:codo="codo.view.*" 
+	width="100%"
+	height="26"
+	verticalScrollPolicy="off"
+	horizontalScrollPolicy="off"
+	click="onClick()"
+	dragEnter="onDragEnter(event)"
+	dragExit="onDragExit(event)"
+	dragDrop="onDragDrop(event)"
+	dragOver="onDragOver(event)"
+	styleName="FilterListEntry">
+	
+	<mx:Script>
+	<![CDATA[
+		import mx.core.Repeater;
+		import codo.model.Folder;
+		import codo.model.Tag;
+		import mx.managers.DragManager;
+		import codo.model.Task;
+		import mx.events.ListEvent;
+		import codo.model.TaskService;
+		import mx.events.DragEvent;
+		import mx.controls.listClasses.BaseListData;
+
+
+		
+    	public var folderList:FolderList;	    	    
+	    public var folder: Folder;
+	    
+
+                        
+        override public function set data(value:Object):void 
+        {
+            super.data = value;
+            if (owner is Repeater) {
+            	folderList = FolderList(Repeater(owner).owner);
+            } else {
+            	folderList = FolderList(owner);
+            }
+	    	folderList.addEventListener(FolderList.REFRESH, onRefresh);
+        }       
+        
+        
+        
+        protected function onClick(): void
+        {
+        	folderList.selectedItem = Folder(data);
+        	folderList.dispatchEvent(new Event(FolderList.SELECT));
+        }
+        
+        
+        protected function focusOn():void 
+        {
+        	styleName = "FilterListEntryFocus";
+        };
+         			
+        protected function focusOff():void 
+        {
+    		if (folderList.selectedItem && folderList.selectedItem.id == data.id) {
+    			styleName = "FilterListEntrySelected";
+    		} else {
+    			styleName = "FilterListEntry";
+    		}
+        };
+        
+        
+        
+        protected function onRefresh(event:Event): void 
+        {
+        	focusOff();        	
+        }
+         			   			
+
+		protected function onDragEnter(event: DragEvent):void {
+			if (event.dragSource.hasFormat("items")) {
+				var items:Array = event.dragSource.dataForFormat("items") as Array;
+				if (items.length > 0 && items[0] is Task) {
+    				DragManager.acceptDragDrop(this);
+    				focusOn();
+				}
+			}
+		}		
+
+
+
+		protected function onDragOver(event: DragEvent):void {
+			DragManager.showFeedback(DragManager.LINK);
+		}
+		
+		
+		
+		protected function onDragExit(event: DragEvent):void {
+			focusOff();
+		}
+		
+
+		protected function onDragDrop(event: DragEvent):void {
+			focusOff();
+			
+			if (event.dragSource.hasFormat("items")) {
+				var items:Array = event.dragSource.dataForFormat("items") as Array;
+				if (items.length > 0 && items[0] is Task) {
+					TaskService.instance.updateTaskFolders(items, Folder(data));
+					folderList.dispatchEvent(new Event(FolderList.FOLDER_CHANGE));    						
+				}
+			}
+			
+		}
+	]]>
+	</mx:Script>
+	
+	<mx:HBox styleName="FolderLabel" height="100%" width="100%">
+		<mx:Image source="/codo/assets/folder{data.color}.png"/>
+		<mx:Label truncateToFit="true" width="100%" id="folderLabel" text="{data.name}" paddingLeft="-6"/>		
+	</mx:HBox>
+</mx:HBox>
